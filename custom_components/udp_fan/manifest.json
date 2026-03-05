@@ -1,9 +1,1 @@
-{
-  "domain": "fan",
-  "name": "Smart Fan",
-  "version": "1.0.0",
-  "documentation": "https://github.com/Aryan795/Ha_fan_integration/",
-  "dependencies": [],
-  "codeowners": [],
-  "iot_class": "local_push"
-}
+{\n  \"domain\": \"udp_fan\",\n  \"name\": \"UDP Smart Fan\",\n  \"version\": \"1.0.0\",\n  \"documentation\": \"https://github.com/Aryan795/Ha_fan_integration\",\n  \"config_flow\": true,\n  \"iot_class\": \"local_push\"\n}
