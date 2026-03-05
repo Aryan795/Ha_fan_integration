@@ -1,29 +1,50 @@
-import socket
-import threading
+import asyncio
+import time
 
 from .const import DISCOVERY_PORT
 
 devices = {}
 
 
-def start_listener(hass):
+class UDPDiscovery(asyncio.DatagramProtocol):
 
-    def listen():
+    def __init__(self, hass):
+        self.hass = hass
 
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        # Bind to all interfaces to receive UDP broadcast discovery packets from fans
-        sock.bind(("0.0.0.0", DISCOVERY_PORT))
+    def datagram_received(self, data, addr):
 
-        while True:
+        ip = addr[0]
+        mac = data.decode(errors="ignore")[:12]
 
-            data, addr = sock.recvfrom(1024)
+        now = time.time()
 
-            ip = addr[0]
+        if mac not in devices:
 
-            mac = data.decode(errors="ignore")[:12]
+            devices[mac] = {
+                "ip": ip,
+                "last_seen": now,
+                "available": True
+            }
 
-            devices[mac] = ip
+            self.hass.async_create_task(
+                self.hass.config_entries.flow.async_init(
+                    "udp_fan",
+                    context={"source": "discovery"},
+                    data={"mac": mac, "ip": ip},
+                )
+            )
 
-    thread = threading.Thread(target=listen, daemon=True)
+        else:
 
-    thread.start()
+            devices[mac]["last_seen"] = now
+            devices[mac]["available"] = True
+
+
+async def start_discovery(hass):
+
+    loop = asyncio.get_running_loop()
+
+    await loop.create_datagram_endpoint(
+        lambda: UDPDiscovery(hass),
+        local_addr=("0.0.0.0", DISCOVERY_PORT),
+    )
