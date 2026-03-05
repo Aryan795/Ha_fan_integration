@@ -1,15 +1,20 @@
-import socket
+import asyncio
 import json
 
 from .const import COMMAND_PORT
 
 
-def send_udp(ip, payload):
+async def send_udp(ip, payload):
 
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    loop = asyncio.get_running_loop()
+
+    transport, _ = await loop.create_datagram_endpoint(
+        asyncio.DatagramProtocol,
+        remote_addr=(ip, COMMAND_PORT),
+    )
 
     message = json.dumps(payload).encode()
 
-    sock.sendto(message, (ip, COMMAND_PORT))
+    transport.sendto(message)
 
-    sock.close()
+    transport.close()
